@@ -1,0 +1,137 @@
+# docker setup
+docker pull redhat/ubi9
+docker run -td trinosandbox -p 8443:8443 -p 8080:8080 redhat/ubi9
+docker exec -ti trinosandbox bash
+
+yum update
+yum install vim wget curl httpd-tools python3 openssl net-tools iputils-ping -y --skip-broken
+
+wget https://download.oracle.com/java/22/latest/jdk-22_linux-x64_bin.rpm &&
+yum localinstall jdk-22_linux-x64_bin.rpm &&
+rm -f jdk-22_linux-x64_bin.rpm &&
+java -version
+
+ln -s /usr/bin/python3 /usr/bin/python &&
+python --version
+
+wget "https://repo1.maven.org/maven2/io/trino/trino-server/454/trino-server-454.tar.gz" &&
+tar -xvzf trino-server-454.tar.gz &&
+mkdir -p /usr/local/trino &&
+mv trino-server-454/* /usr/local/trino
+
+printf "\n# Trino\n" >> ~/.bashrc &&
+echo 'export TRINO_HOME=/usr/local/trino' >> ~/.bashrc &&
+echo 'export PATH=$TRINO_HOME/bin:$PATH' >> ~/.bashrc &&
+source ~/.bashrc &&
+rm -f trino-server-454.tar.gz
+rm -rf trino-server-454
+
+launcher --help
+
+mkdir etc &&
+cd etc
+
+wget https://repo1.maven.org/maven2/io/trino/trino-cli/454/trino-cli-454-executable.jar &&
+mv trino-cli-454-executable.jar trino &&
+chmod +x trino &&
+./trino --version
+
+touch password.db
+
+htpasswd -B -C 10 password.db testuser
+
+touch password-authenticator.properties &&
+echo 'password-authenticator.name=file' >> password-authenticator.properties &&
+echo 'file.password-file=/usr/local/trino/etc/password.db' >> password-authenticator.properties
+
+touch node.properties &&
+echo 'node.environment=production' >> node.properties &&
+echo 'node.id=ffffffff-ffff-ffff-ffff-ffffffffffff' >> node.properties &&
+echo 'node.data-dir=/usr/local/trino/data' >> node.properties
+
+touch config.properties &&
+echo 'coordinator=true' >> config.properties &&
+echo 'node-scheduler.include-coordinator=true' >> config.properties &&
+echo 'http-server.http.port=8080' >> config.properties &&
+echo 'discovery.uri=http://localhost:8080' >> config.properties &&
+echo 'http-server.https.enabled=true' >> config.properties &&
+echo 'http-server.https.port=8443' >> config.properties &&
+echo 'http-server.https.keystore.path=/usr/local/trino/etc/localhost.pem' >> config.properties &&
+echo 'http-server.https.key=fred1234' >> config.properties &&
+echo 'http-server.authentication.type=PASSWORD,CERTIFICATE' >> config.properties &&
+echo 'internal-communication.shared-secret=<>' >> config.properties &&
+
+touch jvm.config &&
+echo '-server' >> jvm.config &&
+echo '-Xmx1G' >> jvm.config &&
+echo '-XX:+UseG1GC' >> jvm.config &&
+echo '-XX:G1HeapRegionSize=32M' >> jvm.config &&
+echo '-XX:+UseGCOverheadLimit' >> jvm.config &&
+echo '-XX:+ExplicitGCInvokesConcurrent' >> jvm.config &&
+echo '-XX:+HeapDumpOnOutOfMemoryError' >> jvm.config &&
+echo '-XX:+ExitOnOutOfMemoryError' >> jvm.config &&
+echo '-Djdk.attach.allowAttachSelf=true' >> jvm.config &&
+
+touch log.properties &&
+echo 'io.trino=INFO' >> log.properties
+
+mkdir catalog &&
+touch catalog/mysqldb.properties &&
+echo 'connector.name=mysql' >> catalog/mysqldb.properties &&
+echo 'connection-url=jdbc:mysq://<IPv4>:<Port>' >> catalog/mysqldb.properties &&
+echo 'connection-user=mysqluser' >> catalog/mysqldb.properties &&
+echo 'connection-password=<password>' >> catalog/mysqldb.properties &&
+echo 'case-insensitive-name-matching=true' >> catalog/mysqldb.properties
+
+touch catalog/postgresqldb.properties &&
+echo 'connector.name=postgresqlrds' >> catalog/postgresqldb.properties &&
+echo 'connection-url=jdbc:postgresql://<IPv4>:<Port>' >> catalog/postgresqldb.properties &&
+echo 'connection-user=postgresqluser' >> catalog/postgresqldb.properties &&
+echo 'connection-password=<password>' >> catalog/postgresqldb.properties &&
+echo 'case-insensitive-name-matching=true' >> catalog/postgresqldb.properties
+
+launcher start
+
+launcher status
+
+SELECT * FROM mysqldb.db.customer WHERE City LIKE '%San%';
+
+SELECT p.PurchaseID, p.CustomerID, p.model, p.serial, p.item, p.discount, p.tax, p.total
+FROM postgresqldb.store.purchase as p
+WHERE firstName LIKE 'Al%'
+LIMIT 10;
+
+SELECT
+postgresql.CustomerID AS PostgreSQL_CustomerID,
+mysql.FirstName AS MySQL_FirstName,
+mysql.LastName AS MySQL_LastName,
+postgresql.item as PostgreSQL_item,
+postgresql.tax as PostgreSQL_tax,
+postgresql.total as PostgreSQL_total
+FROM msqldb.db.customer AS mysql
+INNER JOIN postgresqldb.store.purchase AS postgresql ON mysql.id = postgresql.CustomerID
+WHERE mysql.LastName = 'Smith';
+
+openssl req -new -newkey rsa:2048 -nodes -keyout trino-localhost.key -out trino-localhost.csr
+
+openssl x509 -req -days 365 -in trino-localhost.csr -signkey trino-localhost.key -out trino-localhost.crt
+
+openssl pkcs12 -export -in trino-localhost.crt -inkey trino-localhost.key -out trino-localhost.p12 -name trino
+
+keytool -importkeystore -deststorepass fred1234 -destkeypass fred1234 -destkeystore trino-localhost.jks -srckeystore trino-localhost.p12 -srcstoretype PKCS12 -srcstorepass fred1234 -alias trino
+
+# Verify that server is running with SSL
+curl -v https://localhost:8443 --insecure
+
+# Start Trino client
+./trino --server https://localhost:8443 --user testuser --password --keystore-path /usr/local/trino/etc/trino-localhost.pem --keystore-password fred1234
+
+# WebUI login
+https://localhost:8443
+U: testuser
+P: fred1234
+
+# DBeaver Setup on host machine
+
+
+finally follow these instructions: https://techjogging.com/connect-dbeaver-presto-https-protocol.html
