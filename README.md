@@ -1,6 +1,8 @@
 # Trino-Playground
 
-Docker: Setup PosgreSQL
+A simple tutorial for setting up Trino and two databases.
+
+Example queries are provided to demonstrate Trino's ability to query different databases and how to combine data from multiple database sources to provide a single result.
 
 ## Docker Setup: Postgres
 
