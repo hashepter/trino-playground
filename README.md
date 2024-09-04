@@ -1,4 +1,4 @@
-# Trino-Playground
+# Trino-Playground Tutorial
 
 A simple tutorial for setting up Trino and two databases.
 
