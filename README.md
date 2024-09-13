@@ -140,7 +140,7 @@ INSERT INTO Customer (CustomerId, FirstName, LastName, City, State) VALUES
 Verify the data has been inserted into the Customer table
 
 ```
-SELECT \* FROM Customer;
+SELECT * FROM Customer;
 ```
 
 Quit MySQL CLI
