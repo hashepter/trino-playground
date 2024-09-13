@@ -166,7 +166,7 @@ Password: postgrespw
 Run a test query
 
 ```
-SELECT \* FROM purchase;
+SELECT * FROM purchase;
 ```
 
 (Optional) DBeaver Connection Setup for MySQL by setting the following fields
@@ -180,7 +180,7 @@ Password: mysqlpw
 Run a test query
 
 ```
-SELECT \* FROM Customer;
+SELECT * FROM Customer;
 ```
 
 ## Docker: Setup Trino
@@ -238,7 +238,7 @@ Install Trino Server
 wget "https://repo1.maven.org/maven2/io/trino/trino-server/454/trino-server-454.tar.gz" &&
 tar -xvzf trino-server-454.tar.gz &&
 mkdir -p /usr/local/trino &&
-mv trino-server-454/\* /usr/local/trino
+mv trino-server-454/* /usr/local/trino
 ```
 
 Setup Trino Launcher in ~/.bashrc
@@ -420,7 +420,7 @@ Start Trino client using the 'testuser' password
 Run a query against the MySQL database
 
 ```
-SELECT \* FROM mysqldb.customer.customer WHERE City LIKE '%H%';
+SELECT * FROM mysqldb.customer.customer WHERE City LIKE '%H%';
 ```
 
 Run a query against the Postgres database
@@ -499,7 +499,7 @@ mv trinosandbox.jks ~/certs
 Run a query against the MySQL database
 
 ```
-SELECT \* FROM mysqldb.customer.customer WHERE City LIKE '%H%';
+SELECT * FROM mysqldb.customer.customer WHERE City LIKE '%H%';
 ```
 
 Run a query against the Postgres database
