@@ -9,49 +9,42 @@ Example queries are provided to demonstrate Trino's ability to query different d
 Spin up a Postgres Docker container by running the following commands. Use the password of 'postgrespw' for this tutorial
 
 ```
-docker run --name postgres -e POSTGRES_PASSWORD=postgrespw -p 5432:5432 -d postgres &&
-docker exec -it postgres bash
-```
-
-Open psql CLI
-
-```
-psql -U postgres
+docker run --name postgres -e POSTGRES_PASSWORD=postgrespw -p 5432:5432 -d postgres
 ```
 
 Setup Postgres
 
 ```
-CREATE DATABASE store WITH OWNER postgres ENCODING='UTF8' LC_COLLATE='en_US.utf8' LC_CTYPE='en_US.utf8';
+docker exec -it postgres psql -U postgres -c "CREATE DATABASE store WITH OWNER postgres ENCODING='UTF8' LC_COLLATE='en_US.utf8' LC_CTYPE='en_US.utf8';"
 ```
 
 Switch to the "store" database
 
 ```
-\c store
+docker exec -it postgres psql -U postgres -c "\c store"
 ```
 
 Create the table that will hold data for purchased items. Each record will hold a purchaseId, customerId, item, and a total
 
 ```
-CREATE TABLE purchase (
+docker exec -it postgres psql -U postgres -c "CREATE TABLE purchase (
     purchaseId SERIAL PRIMARY KEY,
     customerId INT,
     item VARCHAR(255),
     total NUMERIC(10, 2)
-);
+);"
 ```
 
 Verify the purchase table was created
 
 ```
-\dt+
+docker exec -it postgres psql -U postgres -c "\dt+"
 ```
 
 Insert mock data into the purchase table
 
 ```
-INSERT INTO purchase (customerId, item, total) VALUES
+docker exec -it postgres psql -U postgres -c "INSERT INTO purchase (customerId, item, total) VALUES
   (1001, 'Stapler', 8.50),
   (1002, 'Notepad', 3.25),
   (1003, 'Ballpoint Pens', 4.50),
@@ -61,25 +54,13 @@ INSERT INTO purchase (customerId, item, total) VALUES
   (1007, 'Desk Organizer', 9.90),
   (1008, 'Tape', 2.45),
   (1009, 'Markers', 6.30),
-  (1010, 'Glue Stick', 0.99);
+  (1010, 'Glue Stick', 0.99);"
 ```
 
 Verify the data has been inserted into the purchase table
 
 ```
-SELECT * FROM purchase;
-```
-
-Quit Postgres CLI
-
-```
-quit
-```
-
-Exit the Postgres Docker container
-
-```
-exit
+docker exec -it postgres psql -U postgres -c "SELECT * FROM purchase;"
 ```
 
 ## Docker Setup: MySQL
